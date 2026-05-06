@@ -42,7 +42,7 @@
         .folder-item:hover { background: rgba(255,255,255,0.1); }
         .folder-item.active { background: var(--accent); }
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .file-card { background: white; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; }
+        .file-card { background: white; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; display: block; }
         
         .status-bar { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 6px; margin-bottom: 15px; text-align: center; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
@@ -115,13 +115,12 @@
     </div>
 
     <script type="module">
-        // Importe mit vollständigen URLs für Browser-Kompatibilität
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, getDoc, doc, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
-        // Deine Konfiguration
+        // Aktualisierte Konfiguration für das Projekt holzquartett
         const firebaseConfig = {
             apiKey: "AIzaSyBizUZLZmAVC4P4jexOC-5ms51_37HIHcc",
             authDomain: "holzquartett-3a177.firebaseapp.com",
@@ -140,12 +139,12 @@
         let userObj = null;
         let folderId = null;
 
-        // AUTH LOGIK
+        // Login & Registrierung
         document.getElementById('btn-do-login').onclick = async () => {
             const e = document.getElementById('login-email').value;
             const p = document.getElementById('login-password').value;
             try { await signInWithEmailAndPassword(auth, e, p); } 
-            catch (err) { alert("Login fehlgeschlagen. Hast du E-Mail/Passwort in Firebase aktiviert?"); }
+            catch (err) { alert("Login fehlgeschlagen. Prüfe deine Daten oder ob E-Mail-Login in Firebase aktiviert ist."); }
         };
 
         document.getElementById('btn-do-register').onclick = async () => {
@@ -155,7 +154,7 @@
             try {
                 const res = await createUserWithEmailAndPassword(auth, e, p);
                 await setDoc(doc(db, "users", res.user.uid), { name: n, email: e });
-            } catch (err) { alert("Fehler: " + err.message); }
+            } catch (err) { alert("Fehler bei der Registrierung: " + err.message); }
         };
 
         onAuthStateChanged(auth, async (u) => {
@@ -189,7 +188,7 @@
 
         document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-        // DATA LOGIK
+        // Ordner- und Dateiverwaltung
         async function loadFolders() {
             onSnapshot(collection(db, "folders"), (snap) => {
                 const list = document.getElementById('folder-list');
@@ -203,6 +202,8 @@
                         folderId = d.id;
                         document.getElementById('folder-title').innerText = f.name;
                         loadFiles(d.id);
+                        document.querySelectorAll('.folder-item').forEach(i => i.classList.remove('active'));
+                        div.classList.add('active');
                     };
                     list.appendChild(div);
                 });
@@ -210,24 +211,24 @@
         }
 
         document.getElementById('btn-add-folder').onclick = async () => {
-            const n = prompt("Name des Fachbereichs:");
+            const n = prompt("Name des Fachbereichs (z.B. Massivholzbearbeitung):");
             if (n) await addDoc(collection(db, "folders"), { name: n, createdBy: userObj.uid });
         };
 
         async function loadFiles(fId) {
             const display = document.getElementById('file-display');
-            display.innerHTML = "Lädt...";
+            display.innerHTML = "Wird geladen...";
             const q = fId ? query(collection(db, "files"), where("folderId", "==", fId)) : collection(db, "files");
             
             onSnapshot(q, (snap) => {
-                display.innerHTML = "";
+                display.innerHTML = snap.empty ? "Keine Dokumente in diesem Bereich." : "";
                 snap.forEach(d => {
                     const f = d.data();
                     const card = document.createElement('a');
                     card.className = 'file-card';
                     card.href = f.url;
                     card.target = "_blank";
-                    card.innerHTML = `<strong>${f.name}</strong><br><small>Von: ${f.userName}</small>`;
+                    card.innerHTML = `<strong>${f.name}</strong><br><small>Bereitgestellt von: ${f.userName}</small>`;
                     display.appendChild(card);
                 });
             });
@@ -235,27 +236,31 @@
 
         document.getElementById('file-input').onchange = async (e) => {
             const file = e.target.files[0];
-            if (!file || !folderId) return alert("Wähle zuerst ein Lernfeld aus!");
+            if (!file || !folderId) return alert("Wähle bitte zuerst einen Fachbereich in der linken Leiste aus!");
 
             const msg = document.getElementById('upload-msg');
             msg.classList.remove('hidden');
 
-            const sRef = ref(storage, `files/${Date.now()}_${file.name}`);
-            await uploadBytes(sRef, file);
-            const url = await getDownloadURL(sRef);
+            try {
+                const sRef = ref(storage, `files/${Date.now()}_${file.name}`);
+                await uploadBytes(sRef, file);
+                const url = await getDownloadURL(sRef);
 
-            const uSnap = await getDoc(doc(db, "users", userObj.uid));
-            await addDoc(collection(db, "files"), {
-                name: file.name,
-                url: url,
-                folderId: folderId,
-                userName: uSnap.data().name,
-                createdAt: serverTimestamp()
-            });
+                const uSnap = await getDoc(doc(db, "users", userObj.uid));
+                await addDoc(collection(db, "files"), {
+                    name: file.name,
+                    url: url,
+                    folderId: folderId,
+                    userName: uSnap.data().name,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                alert("Upload fehlgeschlagen. Prüfe die Storage-Regeln in Firebase.");
+            }
             msg.classList.add('hidden');
         };
 
-        // Navigation Toggles
+        // Navigation
         document.getElementById('go-to-register').onclick = () => {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('register-section').classList.remove('hidden');
