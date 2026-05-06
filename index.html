@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MaterialPool Holztechnik – Kollaborative Plattform</title>
+    <title>MaterialPool Holztechnik</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -13,284 +13,115 @@
             --white: #ffffff;
             --border: #dcdcdc;
             --text: #333333;
-            --success: #27ae60;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text);
-            line-height: 1.6;
-            overflow: hidden;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-light); color: var(--text); line-height: 1.6; overflow: hidden; }
         .hidden { display: none !important; }
 
-        #auth-view {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
+        /* Auth Screen */
+        #auth-view { height: 100vh; display: flex; align-items: center; justify-content: center; background: #eef2f3; }
+        .auth-box { background: var(--white); padding: 2.5rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; }
+        
+        /* App Layout */
+        #app-view { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
+        .sidebar { background-color: var(--primary); color: var(--white); padding: 1.5rem; border-right: 1px solid rgba(255,255,255,0.1); }
+        .main-content { display: flex; flex-direction: column; background: var(--bg-light); overflow-y: auto; }
+        .topbar { background: var(--white); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .content-area { padding: 2rem; flex-grow: 1; }
 
-        .auth-box {
-            background: var(--white);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
+        /* Buttons */
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: white; padding: 12px 20px; width: 100%; margin-bottom: 10px; }
+        .btn-secondary { background: var(--secondary); color: white; padding: 10px 15px; }
+        .btn-text { background: transparent; color: var(--primary); text-decoration: underline; }
 
-        .auth-box h1 { margin-bottom: 0.5rem; color: var(--primary); }
-        .auth-box p { margin-bottom: 2rem; font-size: 0.9rem; color: #666; }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        #app-view {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            height: 100vh;
-        }
-
-        .sidebar {
-            background-color: var(--primary);
-            color: var(--white);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-light);
-            overflow-y: auto;
-        }
-
-        .topbar {
-            background: var(--white);
-            padding: 0.8rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            min-height: 60px;
-        }
-
-        .content-area {
-            padding: 2rem;
-            flex-grow: 1;
-        }
-
-        .folder-list {
-            list-style: none;
-            overflow-y: auto;
-        }
-
-        .folder-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 6px;
-            margin-bottom: 5px;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-        }
-
+        /* Items */
+        .folder-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; }
         .folder-item:hover { background: rgba(255,255,255,0.1); }
         .folder-item.active { background: var(--accent); }
-
-        .action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .file-card {
-            background: var(--white);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .file-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            border-color: var(--accent);
-        }
-
-        .file-info {
-            font-size: 0.8rem;
-            color: #7f8c8d;
-            margin-top: 10px;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-        }
-
-        button {
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
-
-        button:hover { opacity: 0.9; }
-
-        .btn-primary { background: var(--accent); color: white; padding: 12px 24px; width: 100%; margin-bottom: 10px; }
-        .btn-secondary { background: var(--secondary); color: white; padding: 10px 20px; }
-        .btn-small { padding: 6px 12px; font-size: 0.75rem; background: rgba(255,255,255,0.2); color: white; }
-        .btn-text { background: transparent; color: var(--primary); text-decoration: underline; padding: 5px; }
-
-        .status-bar {
-            background: #e1f5fe;
-            color: #01579b;
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .link { color: var(--accent); cursor: pointer; font-weight: bold; }
-
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 12px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
-        }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .file-card { background: white; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; }
+        
+        .status-bar { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 6px; margin-bottom: 15px; text-align: center; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN / REGISTER -->
     <div id="auth-view">
         <div class="auth-box">
             <div id="login-section">
-                <h1>MaterialPool</h1>
-                <p>Anmeldung für Lehramt & Holztechnik</p>
-                <input type="email" id="login-email" placeholder="E-Mail-Adresse">
+                <h2>MaterialPool Login</h2>
+                <p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Holztechnik & Pädagogik</p>
+                <input type="email" id="login-email" placeholder="E-Mail">
                 <input type="password" id="login-password" placeholder="Passwort">
-                <button id="btn-do-login" class="btn-primary">Einloggen</button>
-                <button id="btn-do-google" class="btn-secondary" style="width: 100%;">Mit Google anmelden</button>
-                <p style="margin-top: 15px;">Neu hier? <span id="go-to-register" class="link">Konto erstellen</span></p>
+                <button id="btn-do-login" class="btn-primary">Anmelden</button>
+                <p>Neu hier? <span id="go-to-register" style="color:var(--accent); cursor:pointer;">Registrieren</span></p>
             </div>
 
             <div id="register-section" class="hidden">
-                <h1>Registrierung</h1>
-                <p>Erstelle dein Fachkonto</p>
-                <input type="text" id="reg-name" placeholder="Dein vollständiger Name">
-                <input type="email" id="reg-email" placeholder="E-Mail-Adresse">
-                <input type="password" id="reg-password" placeholder="Passwort wählen">
-                <button id="btn-do-register" class="btn-primary">Jetzt registrieren</button>
-                <p style="margin-top: 15px;">Bereits Mitglied? <span id="go-to-login" class="link">Zum Login</span></p>
+                <h2>Konto erstellen</h2>
+                <input type="text" id="reg-name" placeholder="Vollständiger Name">
+                <input type="email" id="reg-email" placeholder="E-Mail">
+                <input type="password" id="reg-password" placeholder="Passwort">
+                <button id="btn-do-register" class="btn-primary">Registrieren</button>
+                <p><span id="go-to-login" style="color:var(--accent); cursor:pointer;">Zurück zum Login</span></p>
             </div>
         </div>
     </div>
 
+    <!-- MAIN APP -->
     <div id="app-view" class="hidden">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h3>Lernfelder</h3>
-                <button id="btn-add-subject" class="btn-small">+ Neu</button>
-            </div>
-            <nav class="folder-list" id="folder-tree">
-            </nav>
+            <h3 style="margin-bottom: 1rem;">Lernfelder</h3>
+            <button id="btn-add-folder" class="btn-secondary" style="width:100%; margin-bottom: 1rem;">+ Fachbereich</button>
+            <nav id="folder-list"></nav>
         </aside>
 
         <main class="main-content">
             <header class="topbar">
-                <div id="breadcrumb">Startseite / Materialien</div>
-                <div class="user-info">
-                    <span id="user-display-name" style="margin-right: 15px; font-weight: 600;">Nutzer</span>
+                <div id="path">Startseite</div>
+                <div>
+                    <span id="user-name" style="margin-right:1rem; font-weight:bold;">Benutzer</span>
                     <button id="btn-logout" class="btn-text">Abmelden</button>
                 </div>
             </header>
 
             <section class="content-area">
-                <div class="action-bar">
-                    <h2 id="current-folder-title">Alle Dateien</h2>
-                    <div>
-                        <label for="file-input" class="btn-secondary" style="margin-right: 10px; cursor: pointer;">
-                            Datei hochladen
-                            <input type="file" id="file-input" hidden>
-                        </label>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 id="folder-title">Alle Materialien</h2>
+                    <label class="btn-primary" style="width:auto; cursor:pointer;">
+                        Datei hochladen
+                        <input type="file" id="file-input" hidden>
+                    </label>
                 </div>
-
-                <div id="upload-loading" class="status-bar hidden">Übertragung läuft... Bitte warten.</div>
-
-                <div class="file-grid" id="file-display">
-                </div>
+                <div id="upload-msg" class="status-bar hidden">Upload läuft...</div>
+                <div id="file-display" class="file-grid"></div>
             </section>
         </main>
     </div>
 
-    <div id="modal-name-setup" class="modal hidden">
-        <div class="modal-content">
-            <h2>Profil vervollständigen</h2>
-            <p>Wie möchtest du in der Community heißen?</p>
-            <input type="text" id="setup-username" placeholder="Name für Quellenangaben">
-            <button id="btn-save-username" class="btn-primary">Profil speichern</button>
+    <!-- INITIAL NAME MODAL -->
+    <div id="modal-name" class="modal hidden">
+        <div style="background:white; padding:2rem; border-radius:8px; text-align:center;">
+            <h3>Dein Name</h3>
+            <p>Bitte gib deinen Namen für die Uploads an.</p>
+            <input type="text" id="setup-name" placeholder="Vorname Nachname" style="margin-top:1rem;">
+            <button id="btn-save-name" class="btn-primary">Speichern</button>
         </div>
     </div>
 
     <script type="module">
+        // Importe mit vollständigen URLs für Browser-Kompatibilität
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, getDoc, doc, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
+        // Deine Konfiguration
         const firebaseConfig = {
             apiKey: "AIzaSyBizUZLZmAVC4P4jexOC-5ms51_37HIHcc",
             authDomain: "holzquartett-3a177.firebaseapp.com",
@@ -305,166 +136,126 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
-        const provider = new GoogleAuthProvider();
 
-        let activeUser = null;
-        let activeFolderId = null;
+        let userObj = null;
+        let folderId = null;
 
-        const authView = document.getElementById('auth-view');
-        const appView = document.getElementById('app-view');
-        const fileDisplay = document.getElementById('file-display');
-        const folderTree = document.getElementById('folder-tree');
-
-        function showView(view) {
-            authView.classList.add('hidden');
-            appView.classList.add('hidden');
-            if (view === 'auth') authView.classList.remove('hidden');
-            if (view === 'app') appView.classList.remove('hidden');
-        }
-
+        // AUTH LOGIK
         document.getElementById('btn-do-login').onclick = async () => {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) { alert("Fehler: " + e.message); }
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-password').value;
+            try { await signInWithEmailAndPassword(auth, e, p); } 
+            catch (err) { alert("Login fehlgeschlagen. Hast du E-Mail/Passwort in Firebase aktiviert?"); }
         };
 
         document.getElementById('btn-do-register').onclick = async () => {
-            const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
-            const pass = document.getElementById('reg-password').value;
+            const n = document.getElementById('reg-name').value;
+            const e = document.getElementById('reg-email').value;
+            const p = document.getElementById('reg-password').value;
             try {
-                const res = await createUserWithEmailAndPassword(auth, email, pass);
-                await setDoc(doc(db, "users", res.user.uid), { name, email });
-            } catch (e) { alert("Registrierung fehlgeschlagen"); }
+                const res = await createUserWithEmailAndPassword(auth, e, p);
+                await setDoc(doc(db, "users", res.user.uid), { name: n, email: e });
+            } catch (err) { alert("Fehler: " + err.message); }
         };
 
-        document.getElementById('btn-do-google').onclick = () => signInWithPopup(auth, provider);
-
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                activeUser = user;
-                showView('app');
-                checkUserData(user);
-                syncFolders();
-                syncFiles(null);
+        onAuthStateChanged(auth, async (u) => {
+            if (u) {
+                userObj = u;
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('app-view').classList.remove('hidden');
+                
+                const snap = await getDoc(doc(db, "users", u.uid));
+                if (snap.exists()) {
+                    document.getElementById('user-name').innerText = snap.data().name;
+                } else {
+                    document.getElementById('modal-name').classList.remove('hidden');
+                }
+                loadFolders();
+                loadFiles(null);
             } else {
-                showView('auth');
+                document.getElementById('app-view').classList.add('hidden');
+                document.getElementById('auth-view').classList.remove('hidden');
             }
         });
 
-        async function checkUserData(user) {
-            const userRef = doc(db, "users", user.uid);
-            const snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                document.getElementById('modal-name-setup').classList.remove('hidden');
-            } else {
-                document.getElementById('user-display-name').innerText = snap.data().name;
-            }
-        }
-
-        document.getElementById('btn-save-username').onclick = async () => {
-            const name = document.getElementById('setup-username').value;
-            if (name) {
-                await setDoc(doc(db, "users", activeUser.uid), { name, email: activeUser.email });
-                document.getElementById('modal-name-setup').classList.add('hidden');
-                document.getElementById('user-display-name').innerText = name;
+        document.getElementById('btn-save-name').onclick = async () => {
+            const n = document.getElementById('setup-name').value;
+            if (n) {
+                await setDoc(doc(db, "users", userObj.uid), { name: n, email: userObj.email });
+                document.getElementById('modal-name').classList.add('hidden');
+                location.reload();
             }
         };
 
-        document.getElementById('btn-add-subject').onclick = async () => {
-            const title = prompt("Name des neuen Fachbereichs/Ordners:");
-            if (title) {
-                await addDoc(collection(db, "folders"), {
-                    name: title,
-                    parentId: null,
-                    createdBy: activeUser.uid
-                });
-            }
-        };
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-        function syncFolders() {
+        // DATA LOGIK
+        async function loadFolders() {
             onSnapshot(collection(db, "folders"), (snap) => {
-                folderTree.innerHTML = "";
+                const list = document.getElementById('folder-list');
+                list.innerHTML = "";
                 snap.forEach(d => {
                     const f = d.data();
-                    const el = document.createElement('div');
-                    el.className = 'folder-item';
-                    el.innerText = "📁 " + f.name;
-                    el.onclick = () => {
-                        activeFolderId = d.id;
-                        document.getElementById('current-folder-title').innerText = f.name;
-                        syncFiles(d.id);
-                        document.querySelectorAll('.folder-item').forEach(i => i.classList.remove('active'));
-                        el.classList.add('active');
+                    const div = document.createElement('div');
+                    div.className = 'folder-item';
+                    div.innerText = "📁 " + f.name;
+                    div.onclick = () => {
+                        folderId = d.id;
+                        document.getElementById('folder-title').innerText = f.name;
+                        loadFiles(d.id);
                     };
-                    folderTree.appendChild(el);
+                    list.appendChild(div);
                 });
             });
         }
 
-        function syncFiles(folderId) {
-            fileDisplay.innerHTML = "Inhalte werden geladen...";
-            const q = folderId 
-                ? query(collection(db, "files"), where("folderId", "==", folderId))
-                : query(collection(db, "files"));
+        document.getElementById('btn-add-folder').onclick = async () => {
+            const n = prompt("Name des Fachbereichs:");
+            if (n) await addDoc(collection(db, "folders"), { name: n, createdBy: userObj.uid });
+        };
 
+        async function loadFiles(fId) {
+            const display = document.getElementById('file-display');
+            display.innerHTML = "Lädt...";
+            const q = fId ? query(collection(db, "files"), where("folderId", "==", fId)) : collection(db, "files");
+            
             onSnapshot(q, (snap) => {
-                fileDisplay.innerHTML = snap.empty ? "Dieser Ordner ist noch leer." : "";
+                display.innerHTML = "";
                 snap.forEach(d => {
-                    const file = d.data();
+                    const f = d.data();
                     const card = document.createElement('a');
                     card.className = 'file-card';
-                    card.href = file.url;
+                    card.href = f.url;
                     card.target = "_blank";
-                    card.innerHTML = `
-                        <strong>${file.name}</strong>
-                        <div class="file-info">
-                            Bereitgestellt von: ${file.userName}<br>
-                            Datum: ${file.createdAt?.toDate().toLocaleDateString() || 'gerade eben'}
-                        </div>
-                    `;
-                    fileDisplay.appendChild(card);
+                    card.innerHTML = `<strong>${f.name}</strong><br><small>Von: ${f.userName}</small>`;
+                    display.appendChild(card);
                 });
             });
         }
 
         document.getElementById('file-input').onchange = async (e) => {
             const file = e.target.files[0];
-            if (!file || !activeFolderId) {
-                alert("Wähle zuerst links ein Lernfeld aus!");
-                return;
-            }
+            if (!file || !folderId) return alert("Wähle zuerst ein Lernfeld aus!");
 
-            const loader = document.getElementById('upload-loading');
-            loader.classList.remove('hidden');
+            const msg = document.getElementById('upload-msg');
+            msg.classList.remove('hidden');
 
-            try {
-                const fileRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-                await uploadBytes(fileRef, file);
-                const downloadUrl = await getDownloadURL(fileRef);
+            const sRef = ref(storage, `files/${Date.now()}_${file.name}`);
+            await uploadBytes(sRef, file);
+            const url = await getDownloadURL(sRef);
 
-                const uSnap = await getDoc(doc(db, "users", activeUser.uid));
-                
-                await addDoc(collection(db, "files"), {
-                    name: file.name,
-                    url: downloadUrl,
-                    folderId: activeFolderId,
-                    userId: activeUser.uid,
-                    userName: uSnap.data().name,
-                    createdAt: serverTimestamp()
-                });
-                loader.classList.add('hidden');
-            } catch (err) {
-                console.error(err);
-                alert("Upload-Fehler. Prüfe bitte die Firebase Storage Berechtigungen.");
-                loader.classList.add('hidden');
-            }
+            const uSnap = await getDoc(doc(db, "users", userObj.uid));
+            await addDoc(collection(db, "files"), {
+                name: file.name,
+                url: url,
+                folderId: folderId,
+                userName: uSnap.data().name,
+                createdAt: serverTimestamp()
+            });
+            msg.classList.add('hidden');
         };
 
+        // Navigation Toggles
         document.getElementById('go-to-register').onclick = () => {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('register-section').classList.remove('hidden');
