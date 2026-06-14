@@ -109,20 +109,33 @@
     <div class="main-grid">
         <!-- Spalte 1: Klassenverwaltung, Schüler, Einstellungen -->
         <div>
-            <div class="card">
-                <div class="card-title">Klassenverwaltung</div>
-                <input type="text" id="classNameInput" placeholder="Klassenname..." style="width:100%; margin-bottom:10px;">
+            <!-- Card: Klassenverwaltung (nur wenn neue Klasse wird erstellt) -->
+            <div class="card" id="classManagementCard" style="display: none;">
+                <div class="card-title">Neue Klasse erstellen</div>
                 
-                <div class="card-title" style="margin-top:20px;">Schüler</div>
-                <textarea id="bulkPasteArea" placeholder="Namen eingeben (eine pro Zeile)..." style="width:100%; height:80px; margin-bottom:10px;"></textarea>
-                <button class="btn btn-primary btn-full" onclick="addStudents()">Schüler hinzufügen</button>
-                
-                <ul class="student-list" id="studentList"></ul>
-                
-                <button class="btn btn-primary btn-full" onclick="saveClass()">Klasse speichern</button>
+                <div id="step1" class="creation-step">
+                    <label>Klassenname:</label>
+                    <input type="text" id="classNameInput" placeholder="z.B. 5A, Mathe-Kurs..." style="width:100%; margin-bottom:10px;">
+                    <button class="btn btn-primary btn-full" onclick="proceedToStudents()">Weiter →</button>
+                </div>
+
+                <div id="step2" class="creation-step" style="display: none;">
+                    <div class="card-title" style="margin-bottom: 16px;">Schüler eingeben</div>
+                    <textarea id="bulkPasteArea" placeholder="Namen eingeben (eine pro Zeile)..." style="width:100%; height:80px; margin-bottom:10px;"></textarea>
+                    <button class="btn btn-primary btn-full" onclick="addStudents()">Schüler hinzufügen</button>
+                    <button class="btn btn-primary btn-full" onclick="proceedToReview()" style="margin-top: 20px;">Weiter zur Übersicht →</button>
+                </div>
+
+                <div id="step3" class="creation-step" style="display: none;">
+                    <div class="card-title" style="margin-bottom: 16px;">Schülerliste</div>
+                    <ul class="student-list" id="studentList"></ul>
+                    <button class="btn btn-primary btn-full" onclick="saveClass()">Klasse speichern</button>
+                    <button class="btn" onclick="backToStep2()" style="width:100%; margin-top:10px; background: var(--btn-gray);">← Zurück</button>
+                </div>
             </div>
 
-            <div class="card">
+            <!-- Card: Gruppeneinstellungen (nur wenn Klasse geladen ist) -->
+            <div class="card" id="groupSettingsCard" style="display: none;">
                 <div class="card-title">Gruppeneinstellungen</div>
                 <select id="splitMode" onchange="updateGroupSettings()" style="width:100%; margin-bottom:10px;">
                     <option value="groups">Anzahl Gruppen</option>
@@ -135,20 +148,30 @@
 
         <!-- Spalte 2: Gruppen & Timer -->
         <div>
-            <div class="card">
+            <div class="card" id="groupsCard" style="display: none;">
                 <div class="card-title">Gruppenansicht</div>
                 <div id="groupsOutput" class="no-data">Noch keine Gruppen erstellt.</div>
             </div>
-            
+        </div>
+
+        <!-- Spalte 3: Timer (immer sichtbar) -->
+        <div style="grid-column: 1 / -1;">
             <div class="card">
                 <div class="card-title">Phasentimer</div>
-                <div class="timer-display" id="timerDisplay">05:00</div>
-                <div class="timer-controls">
-                    <button class="btn btn-primary" onclick="startTimer()">Start</button>
-                    <button class="btn btn-primary" onclick="pauseTimer()">Pause</button>
-                    <button class="btn btn-primary" onclick="resetTimer()">Reset</button>
+                <div style="display: grid; grid-template-columns: 1fr 200px; gap: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Minuten eingeben:</label>
+                        <input type="number" id="timerMinutesInput" value="5" min="1" onchange="updateTimerFromMinutes()" style="width:100%; padding: 10px;">
+                    </div>
+                    <div style="text-align: center;">
+                        <div class="timer-display" id="timerDisplay">05:00</div>
+                    </div>
                 </div>
-                <input type="number" id="timerInput" value="300" style="width:100%; margin-top:10px;" placeholder="Zeit in Sekunden">
+                <div class="timer-controls" style="margin-top: 20px;">
+                    <button class="btn btn-primary" id="timerStartStopBtn" onclick="toggleTimer()">Start</button>
+                    <button class="btn btn-primary" onclick="pauseTimer()">Pause</button>
+                    <button class="btn btn-primary" onclick="resetTimerFromInput()">Reset</button>
+                </div>
             </div>
         </div>
     </div>
@@ -193,13 +216,26 @@
     let deleteClassId = null;
 
     // ========== Timer Funktionen ==========
-    window.startTimer = () => {
-        if (timerInterval) return;
-        timerInterval = setInterval(() => {
-            timerSeconds--;
-            if (timerSeconds < 0) clearInterval(timerInterval);
+    window.toggleTimer = () => {
+        if (timerInterval) {
+            pauseTimer();
+            document.getElementById('timerStartStopBtn').textContent = 'Start';
+        } else {
+            const mins = parseInt(document.getElementById('timerMinutesInput').value) || 5;
+            timerSeconds = mins * 60;
             updateTimerDisplay();
-        }, 1000);
+            
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                if (timerSeconds < 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('timerStartStopBtn').textContent = 'Start';
+                }
+                updateTimerDisplay();
+            }, 1000);
+            document.getElementById('timerStartStopBtn').textContent = 'Stop';
+        }
     };
 
     window.pauseTimer = () => {
@@ -207,10 +243,17 @@
         timerInterval = null;
     };
 
-    window.resetTimer = () => {
+    window.updateTimerFromMinutes = () => {
         pauseTimer();
-        timerSeconds = parseInt(document.getElementById('timerInput').value) || 300;
+        const mins = parseInt(document.getElementById('timerMinutesInput').value) || 5;
+        timerSeconds = mins * 60;
         updateTimerDisplay();
+        document.getElementById('timerStartStopBtn').textContent = 'Start';
+    };
+
+    window.resetTimerFromInput = () => {
+        pauseTimer();
+        updateTimerFromMinutes();
     };
 
     function updateTimerDisplay() {
@@ -226,9 +269,6 @@
             const snapshot = await getDocs(collection(db, "klassen"));
             classes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             renderClassTabs();
-            if (classes.length > 0 && !activeClassId) {
-                loadClass(classes[0].id);
-            }
         } catch (e) {
             console.error("Fehler beim Laden der Klassen:", e);
         }
@@ -254,11 +294,48 @@
     }
 
     window.showNewClassInput = () => {
-        const name = prompt("Name der neuen Klasse:");
-        if (name && name.trim()) {
-            createNewClass(name.trim());
-        }
+        // Reset Klassenerstellung
+        students = [];
+        document.getElementById('classNameInput').value = '';
+        document.getElementById('bulkPasteArea').value = '';
+        document.getElementById('studentList').innerHTML = '';
+        
+        // Zeige Step 1
+        document.getElementById('classManagementCard').style.display = 'block';
+        document.getElementById('groupSettingsCard').style.display = 'none';
+        document.getElementById('groupsCard').style.display = 'none';
+        
+        showStep(1);
     };
+
+    window.proceedToStudents = () => {
+        const name = document.getElementById('classNameInput').value.trim();
+        if (!name) {
+            alert("Bitte gib einen Klassennamen ein!");
+            return;
+        }
+        showStep(2);
+    };
+
+    window.proceedToReview = () => {
+        addStudents();
+        if (students.length === 0) {
+            alert("Bitte füge mindestens einen Schüler hinzu!");
+            return;
+        }
+        renderStudents();
+        showStep(3);
+    };
+
+    window.backToStep2 = () => {
+        showStep(2);
+    };
+
+    function showStep(stepNum) {
+        document.getElementById('step1').style.display = stepNum === 1 ? 'block' : 'none';
+        document.getElementById('step2').style.display = stepNum === 2 ? 'block' : 'none';
+        document.getElementById('step3').style.display = stepNum === 3 ? 'block' : 'none';
+    }
 
     async function createNewClass(name) {
         const id = Date.now().toString();
@@ -291,11 +368,14 @@
                 groups = data.groups || [];
                 
                 // UI aktualisieren
-                document.getElementById('classNameInput').value = data.name;
                 document.getElementById('splitMode').value = groupSettings.mode;
                 document.getElementById('splitValue').value = groupSettings.value;
                 
-                renderStudents();
+                // Zeige die richtige UI
+                document.getElementById('classManagementCard').style.display = 'none';
+                document.getElementById('groupSettingsCard').style.display = 'block';
+                document.getElementById('groupsCard').style.display = 'block';
+                
                 renderClassTabs();
                 if (groups.length > 0) {
                     renderGroups();
@@ -380,25 +460,50 @@
 
     // ========== Speichern ==========
     window.saveClass = async () => {
-        if (!activeClassId) {
-            alert("Bitte erstelle zuerst eine Klasse");
+        const className = document.getElementById('classNameInput').value.trim() || "Klasse";
+        
+        if (students.length === 0) {
+            alert("Bitte füge mindestens einen Schüler hinzu!");
             return;
         }
-        
-        const className = document.getElementById('classNameInput').value || "Klasse";
+
+        // Neue Klasse erstellen
+        const classId = Date.now().toString();
+        activeClassId = classId;
+        groupSettings = { mode: 'groups', value: 4 };
+        groups = [];
         
         try {
-            await setDoc(doc(db, "klassen", activeClassId), {
-                id: activeClassId,
+            await setDoc(doc(db, "klassen", classId), {
+                id: classId,
                 name: className,
                 students,
                 groupSettings,
                 groups
             });
-            alert("Klasse gespeichert!");
+            
+            // Zur Klassen-Liste hinzufügen
+            classes.push({
+                id: classId,
+                name: className,
+                students,
+                groupSettings,
+                groups
+            });
+            
+            // UI aktualisieren
+            document.getElementById('classManagementCard').style.display = 'none';
+            document.getElementById('groupSettingsCard').style.display = 'block';
+            document.getElementById('groupsCard').style.display = 'block';
+            document.getElementById('splitMode').value = 'groups';
+            document.getElementById('splitValue').value = '4';
+            document.getElementById('groupsOutput').innerHTML = '<div class="no-data">Noch keine Gruppen erstellt.</div>';
+            
+            renderClassTabs();
+            alert("Klasse erfolgreich erstellt!");
         } catch (e) {
             console.error("Fehler beim Speichern:", e);
-            alert("Fehler beim Speichern");
+            alert("Fehler beim Speichern der Klasse");
         }
     };
 
@@ -479,7 +584,19 @@
     }
 
     // ========== Initialisierung ==========
-    loadClasses();
+    async function init() {
+        await loadClasses();
+        
+        // Wenn keine Klassen vorhanden, zeige die neue Klassenerstellung
+        if (classes.length === 0) {
+            document.getElementById('classManagementCard').style.display = 'block';
+            document.getElementById('groupSettingsCard').style.display = 'none';
+            document.getElementById('groupsCard').style.display = 'none';
+            showStep(1);
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
