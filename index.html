@@ -447,27 +447,6 @@
         <div class="right-col">
             
             <div class="card no-print">
-                <div class="card-title">Phasentimer</div>
-                <div class="timer-container">
-                    <div class="timer-circle">
-                        <svg class="timer-svg" viewBox="0 0 200 200">
-                            <circle class="timer-bg" cx="100" cy="100" r="90"></circle>
-                            <circle class="timer-progress" id="timerRing" cx="100" cy="100" r="90"></circle>
-                        </svg>
-                        <div class="timer-text" id="timerDisplay">05:00</div>
-                    </div>
-                    <div class="flex-row">
-                        <input type="number" id="timerMinutes" value="5" min="1" max="90" style="width: 70px;"> min
-                    </div>
-                    <div class="flex-row" style="margin-top: 12px;">
-                        <button class="btn btn-primary" onclick="startTimer()">Start</button>
-                        <button class="btn btn-secondary" onclick="pauseTimer()">Pause</button>
-                        <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card no-print">
                 <div class="card-title">Gruppeneinstellungen</div>
                 <div class="form-group">
                     <label>Modus</label>
@@ -486,7 +465,7 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Gruppen werden direkt in der Historie vermerkt.</p>
             </div>
 
-            <div id="fullscreenArea" class="card" style="margin-bottom: 0;">
+            <div id="fullscreenArea" class="card" style="margin-bottom: 24px;">
                 
                 <div class="utility-bar no-print">
                     <div class="card-title" style="margin: 0; border: none; padding: 0;">Gruppenansicht</div>
@@ -514,6 +493,27 @@
                     </div>
                 </div>
 
+            </div>
+
+            <div class="card no-print" style="margin-bottom: 0;">
+                <div class="card-title">Phasentimer</div>
+                <div class="timer-container">
+                    <div class="timer-circle">
+                        <svg class="timer-svg" viewBox="0 0 200 200">
+                            <circle class="timer-bg" cx="100" cy="100" r="90"></circle>
+                            <circle class="timer-progress" id="timerRing" cx="100" cy="100" r="90"></circle>
+                        </svg>
+                        <div class="timer-text" id="timerDisplay">05:00</div>
+                    </div>
+                    <div class="flex-row">
+                        <input type="number" id="timerMinutes" value="5" min="1" max="90" style="width: 70px;"> min
+                    </div>
+                    <div class="flex-row" style="margin-top: 12px;">
+                        <button class="btn btn-primary" onclick="startTimer()">Start</button>
+                        <button class="btn btn-secondary" onclick="pauseTimer()">Pause</button>
+                        <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
