@@ -3,128 +3,573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gruppeneinteiler & Timer</title>
+    <title>School Tool Gruppeneinteiler</title>
     <style>
         :root {
             --bg-color: #f5f5f5;
             --card-bg: #ffffff;
             --text-color: #202124;
+            --text-muted: #5f6368;
             --border-color: #e5e5e5;
             --primary: #10a37f;
+            --primary-hover: #0d8a6c;
             --danger: #d93025;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --danger-hover: #b31412;
+            --btn-gray: #f1f3f4;
+            --btn-gray-hover: #e8eaed;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --pastel-1: #e6f4ea; --pastel-2: #e8f0fe; --pastel-3: #fce8e6; --pastel-4: #f3e8fd; --pastel-5: #e0f2f1; 
         }
-        body { font-family: sans-serif; background-color: var(--bg-color); padding: 20px; color: var(--text-color); }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .flex-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; background: var(--primary); color: white; margin-top: 5px; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); padding: 24px; }
+        .container { max-width: 1400px; margin: 0 auto; }
         
-        /* Schülerliste */
+        .top-bar { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 24px; box-shadow: var(--shadow); display: flex; gap: 12px; overflow-x: auto; flex-wrap: wrap; align-items: center; }
+        
+        .class-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .class-btn:hover { background: var(--btn-gray); }
+        .class-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .class-btn.active:hover { background: var(--primary-hover); }
+        
+        .delete-class-btn { cursor: pointer; opacity: 0.6; margin-left: 4px; font-weight: bold; transition: all 0.2s; }
+        .delete-class-btn:hover { opacity: 1; color: var(--danger); }
+        
+        .main-grid { display: grid; grid-template-columns: 400px 1fr; gap: 24px; }
+        @media (max-width: 1000px) { .main-grid { grid-template-columns: 1fr; } }
+        
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 24px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+
+        /* Klasse Header */
+        .class-header { padding: 12px; background: var(--pastel-2); border-radius: 6px; margin-bottom: 20px; font-weight: 500; }
+        .class-header-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; }
+        .class-header-name { font-size: 1.2rem; color: var(--primary); }
+
+        /* Schüler Liste */
+        .student-list { list-style: none; margin-top: 10px; max-height: 300px; overflow-y: auto; }
         .student-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
-        
-        /* Timer Design */
-        .timer-section { text-align: center; }
-        .timer-circle { position: relative; width: 150px; height: 150px; margin: 20px auto; }
-        svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-        .circle-bg { fill: none; stroke: #eee; stroke-width: 8; }
-        .circle-progress { fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.5s linear; }
+        .student-item input[type="checkbox"] { margin-right: 10px; }
+        .student-name { flex-grow: 1; }
+        .remove-student-btn { cursor: pointer; color: var(--danger); font-weight: bold; padding: 0 5px; }
+
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-full { width: 100%; margin-top: 10px; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: var(--danger-hover); }
+
+        input, textarea, select { font-family: inherit; }
+        input[type="text"], input[type="number"], textarea, select { 
+            padding: 8px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px; 
+            font-size: 14px;
+        }
+
+        .group-card { border: 2px solid var(--border-color); padding: 15px; border-radius: 8px; background: var(--pastel-1); }
+        .group-card h4 { margin-bottom: 10px; color: var(--primary); }
+        .group-members { font-size: 14px; line-height: 1.6; }
+        .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+
+        .timer-display { font-size: 3rem; text-align: center; font-weight: bold; color: var(--primary); margin: 20px 0; font-family: 'Courier New', monospace; }
+        .timer-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .timer-controls button { flex: 1; min-width: 80px; }
+
+        .loading { text-align: center; color: var(--text-muted); }
+        .no-data { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .modal-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
+        .modal-input { width: 100%; margin-bottom: 15px; }
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons button { flex: 1; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Gruppeneinteiler</h1>
-    <div class="flex-cols">
-        <!-- Spalte 1: Verwaltung -->
-        <div>
-            <div class="card">
-                <h3>Klassenverwaltung</h3>
-                <input type="text" id="className" placeholder="Klassenname" style="width:100%; padding:8px;">
-                <button class="btn" onclick="saveClass()">Klasse speichern</button>
-            </div>
-            <div class="card">
-                <h3>Schülerliste</h3>
-                <textarea id="studentInput" placeholder="Namen eingeben..." style="width:100%; height:60px;"></textarea>
-                <button class="btn" onclick="addStudents()">Hinzufügen</button>
-                <div id="studentList"></div>
-            </div>
-        </div>
-        <!-- Spalte 2: Gruppen -->
-        <div>
-            <div class="card">
-                <h3>Gruppen</h3>
-                <button class="btn" onclick="generateGroups()">Neu würfeln</button>
-                <div id="groupsOutput"></div>
-            </div>
-        </div>
+    <div class="top-bar" id="classTabBar">
+        <button class="btn btn-primary" onclick="showNewClassModal()">+ Neue Klasse</button>
     </div>
 
-    <!-- Timer Tool ganz unten -->
-    <div class="card timer-section">
-        <h3>Phasentimer</h3>
-        <div class="timer-circle">
-            <svg viewBox="0 0 100 100">
-                <circle class="circle-bg" cx="50" cy="50" r="40" />
-                <circle id="progress" class="circle-progress" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="0" />
-            </svg>
-            <div id="timerText" style="position:absolute; top:60px; width:100%; font-weight:bold;">05:00</div>
+    <div class="main-grid">
+        <!-- Spalte 1: Klassenverwaltung, Schüler, Einstellungen -->
+        <div>
+            <div class="card" id="classManagementCard" style="display:none;">
+                <div class="card-title">Klassenverwaltung</div>
+                <div class="class-header">
+                    <div class="class-header-label">Aktive Klasse:</div>
+                    <div class="class-header-name" id="activeClassName">-</div>
+                </div>
+                
+                <div class="card-title" style="margin-top:20px; margin-bottom: 10px;">Schüler</div>
+                <textarea id="bulkPasteArea" placeholder="Namen eingeben (eine pro Zeile)..." style="width:100%; height:80px; margin-bottom:10px;"></textarea>
+                <button class="btn btn-primary btn-full" onclick="addStudents()">Schüler hinzufügen</button>
+                
+                <ul class="student-list" id="studentList"></ul>
+                
+                <button class="btn btn-primary btn-full" onclick="saveClass()">Klasse speichern</button>
+            </div>
+
+            <div class="card" id="groupSettingsCard" style="display:none;">
+                <div class="card-title">Gruppeneinstellungen</div>
+                <select id="splitMode" onchange="updateGroupSettings()" style="width:100%; margin-bottom:10px;">
+                    <option value="groups">Anzahl Gruppen</option>
+                    <option value="size">Personen pro Gruppe</option>
+                </select>
+                <input type="number" id="splitValue" value="4" min="1" onchange="updateGroupSettings()" style="width:100%; margin-bottom:10px;">
+                <button class="btn btn-primary btn-full" onclick="generateGroups()">Neu würfeln</button>
+            </div>
         </div>
-        <input type="number" id="timerMin" value="5" style="width:50px;"> Min
-        <button class="btn" onclick="startTimer()">Start</button>
+
+        <!-- Spalte 2: Gruppen & Timer -->
+        <div>
+            <div class="card" id="groupsCard" style="display:none;">
+                <div class="card-title">Gruppenansicht</div>
+                <div id="groupsOutput" class="no-data">Noch keine Gruppen erstellt.</div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Phasentimer</div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Zeit (Minuten):</label>
+                    <input type="number" id="timerInput" value="5" min="0" max="120" style="width:100%; margin-bottom:10px;" onchange="updateTimerFromInput()">
+                </div>
+                <div class="timer-display" id="timerDisplay">05:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-primary" id="startStopBtn" onclick="toggleTimer()">Start</button>
+                    <button class="btn btn-primary" onclick="pauseTimer()">Pause</button>
+                    <button class="btn btn-primary" onclick="resetTimer()">Reset</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<script>
+<!-- Modal für neue Klasse -->
+<div id="newClassModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">Neue Klasse erstellen</div>
+        <input type="text" id="newClassNameInput" class="modal-input" placeholder="Klassenname (z.B. 5a, Deutsch-Q1, etc.)" onkeypress="handleNewClassEnter(event)">
+        <div class="modal-buttons">
+            <button class="btn btn-primary" onclick="createNewClass()">Erstellen</button>
+            <button class="btn" onclick="closeNewClassModal()" style="background: var(--btn-gray);">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bestätigungs-Modal für Löschen -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">Klasse löschen?</div>
+        <p id="deleteModalText" style="margin-bottom:15px; color: var(--text-muted);"></p>
+        <div class="modal-buttons">
+            <button class="btn btn-danger" onclick="confirmDelete()">Löschen</button>
+            <button class="btn" onclick="closeDeleteModal()" style="background: var(--btn-gray);">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAM1ToGpHGNzeM3qopEejMI2fyyCZZy_eM",
+      authDomain: "gruppeneinteilung-649ee.firebaseapp.com",
+      projectId: "gruppeneinteilung-649ee",
+      storageBucket: "gruppeneinteilung-649ee.firebasestorage.app",
+      messagingSenderId: "968582903146",
+      appId: "1:968582903146:web:32cf13b7bf3d0aa2a72113"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // State
+    let classes = [];
     let students = [];
-    
-    function addStudents() {
-        const val = document.getElementById('studentInput').value;
-        val.split('\n').forEach(name => {
-            if(name.trim()) students.push({name: name.trim(), active: true, id: Date.now() + Math.random()});
-        });
-        renderStudents();
+    let activeClassId = null;
+    let activeClassName = null;
+    let groups = [];
+    let groupSettings = { mode: 'groups', value: 4 };
+    let timerInterval = null;
+    let timerSeconds = 300;
+    let isTimerRunning = false;
+    let deleteClassId = null;
+
+    // ========== Timer Funktionen ==========
+    window.toggleTimer = () => {
+        if (isTimerRunning) {
+            pauseTimer();
+        } else {
+            startTimer();
+        }
+    };
+
+    function startTimer() {
+        if (timerInterval) return;
+        isTimerRunning = true;
+        document.getElementById('startStopBtn').textContent = 'Stop';
+        timerInterval = setInterval(() => {
+            timerSeconds--;
+            if (timerSeconds < 0) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isTimerRunning = false;
+                document.getElementById('startStopBtn').textContent = 'Start';
+            }
+            updateTimerDisplay();
+        }, 1000);
+    };
+
+    window.pauseTimer = () => {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+        isTimerRunning = false;
+        document.getElementById('startStopBtn').textContent = 'Start';
+    };
+
+    window.resetTimer = () => {
+        pauseTimer();
+        timerSeconds = parseInt(document.getElementById('timerInput').value) * 60 || 300;
+        updateTimerDisplay();
+    };
+
+    window.updateTimerFromInput = () => {
+        pauseTimer();
+        timerSeconds = parseInt(document.getElementById('timerInput').value) * 60 || 300;
+        updateTimerDisplay();
+    };
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById('timerDisplay').textContent = 
+            String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
     }
+
+    // ========== Modal Funktionen ==========
+    window.showNewClassModal = () => {
+        document.getElementById('newClassModal').style.display = 'block';
+        document.getElementById('newClassNameInput').focus();
+    };
+
+    window.closeNewClassModal = () => {
+        document.getElementById('newClassModal').style.display = 'none';
+        document.getElementById('newClassNameInput').value = '';
+    };
+
+    window.handleNewClassEnter = (event) => {
+        if (event.key === 'Enter') createNewClass();
+    };
+
+    window.closeDeleteModal = () => {
+        document.getElementById('deleteModal').style.display = 'none';
+        deleteClassId = null;
+    };
+
+    // ========== Klassen Verwaltung ==========
+    async function loadClasses() {
+        try {
+            const snapshot = await getDocs(collection(db, "klassen"));
+            classes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderClassTabs();
+            if (classes.length > 0 && !activeClassId) {
+                loadClass(classes[0].id);
+            }
+        } catch (e) {
+            console.error("Fehler beim Laden der Klassen:", e);
+        }
+    }
+
+    function renderClassTabs() {
+        const bar = document.getElementById('classTabBar');
+        bar.innerHTML = '<button class="btn btn-primary" onclick="showNewClassModal()">+ Neue Klasse</button>';
+        
+        classes.forEach(cls => {
+            const btn = document.createElement('button');
+            btn.className = 'class-btn' + (cls.id === activeClassId ? ' active' : '');
+            btn.innerHTML = `
+                ${cls.name}
+                <span class="delete-class-btn" onclick="deleteClass(event, '${cls.id}')" title="Klasse löschen">×</span>
+            `;
+            btn.onclick = (e) => {
+                if (e.target.className.includes('delete-class-btn')) return;
+                loadClass(cls.id);
+            };
+            bar.appendChild(btn);
+        });
+    }
+
+    window.createNewClass = async () => {
+        const name = document.getElementById('newClassNameInput').value.trim();
+        if (!name) {
+            alert("Bitte gib einen Klassennamen ein!");
+            return;
+        }
+
+        const id = Date.now().toString();
+        const newClass = {
+            id,
+            name,
+            students: [],
+            groupSettings: { mode: 'groups', value: 4 },
+            groups: []
+        };
+
+        try {
+            await setDoc(doc(db, "klassen", id), newClass);
+            classes.push(newClass);
+            closeNewClassModal();
+            renderClassTabs();
+            loadClass(id);
+        } catch (e) {
+            console.error("Fehler beim Erstellen der Klasse:", e);
+            alert("Fehler beim Erstellen der Klasse");
+        }
+    };
+
+    async function loadClass(classId) {
+        try {
+            const docSnap = await getDoc(doc(db, "klassen", classId));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                activeClassId = classId;
+                activeClassName = data.name;
+                students = data.students || [];
+                groupSettings = data.groupSettings || { mode: 'groups', value: 4 };
+                groups = data.groups || [];
+                
+                // UI aktualisieren
+                document.getElementById('activeClassName').textContent = activeClassName;
+                document.getElementById('splitMode').value = groupSettings.mode;
+                document.getElementById('splitValue').value = groupSettings.value;
+                
+                // Cards anzeigen
+                document.getElementById('classManagementCard').style.display = 'block';
+                document.getElementById('groupSettingsCard').style.display = 'block';
+                document.getElementById('groupsCard').style.display = 'block';
+                
+                renderStudents();
+                renderClassTabs();
+                
+                if (groups.length > 0) {
+                    renderGroups();
+                } else {
+                    document.getElementById('groupsOutput').innerHTML = '<div class="no-data">Noch keine Gruppen erstellt.</div>';
+                }
+            }
+        } catch (e) {
+            console.error("Fehler beim Laden der Klasse:", e);
+        }
+    }
+
+    window.deleteClass = (event, classId) => {
+        event.stopPropagation();
+        deleteClassId = classId;
+        const cls = classes.find(c => c.id === classId);
+        document.getElementById('deleteModalText').textContent = `Möchtest du die Klasse "${cls.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`;
+        document.getElementById('deleteModal').style.display = 'block';
+    };
+
+    window.confirmDelete = async () => {
+        try {
+            await deleteDoc(doc(db, "klassen", deleteClassId));
+            classes = classes.filter(c => c.id !== deleteClassId);
+            closeDeleteModal();
+            
+            if (activeClassId === deleteClassId) {
+                activeClassId = null;
+                students = [];
+                groups = [];
+                document.getElementById('classManagementCard').style.display = 'none';
+                document.getElementById('groupSettingsCard').style.display = 'none';
+                document.getElementById('groupsCard').style.display = 'none';
+            }
+            renderClassTabs();
+        } catch (e) {
+            console.error("Fehler beim Löschen:", e);
+            alert("Fehler beim Löschen der Klasse");
+        }
+    };
+
+    // ========== Schüler Verwaltung ==========
+    window.addStudents = () => {
+        const input = document.getElementById('bulkPasteArea');
+        const names = input.value.split('\n').filter(n => n.trim());
+        
+        if (names.length === 0) {
+            alert("Bitte gib mindestens einen Namen ein!");
+            return;
+        }
+
+        names.forEach(name => {
+            students.push({ id: Date.now() + Math.random(), name: name.trim(), active: true });
+        });
+        input.value = '';
+        renderStudents();
+    };
 
     function renderStudents() {
         const list = document.getElementById('studentList');
         list.innerHTML = '';
         students.forEach(s => {
-            list.innerHTML += `
-                <div class="student-item">
-                    <input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleStudent(${s.id})">
-                    <span style="flex-grow:1">${s.name}</span>
-                    <span onclick="removeStudent(${s.id})" style="cursor:pointer; color:red;">&times;</span>
-                </div>
+            const li = document.createElement('li');
+            li.className = 'student-item';
+            li.innerHTML = `
+                <input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleStudent(${s.id})">
+                <span class="student-name">${s.name}</span>
+                <span class="remove-student-btn" onclick="removeStudent(${s.id})">&times;</span>
             `;
+            list.appendChild(li);
         });
     }
 
-    function toggleStudent(id) {
-        students.find(s => s.id === id).active = !students.find(s => s.id === id).active;
-    }
+    window.toggleStudent = (id) => {
+        const s = students.find(x => x.id === id);
+        if (s) s.active = !s.active;
+    };
 
-    function removeStudent(id) {
-        students = students.filter(s => s.id !== id);
+    window.removeStudent = (id) => {
+        students = students.filter(x => x.id !== id);
         renderStudents();
+    };
+
+    // ========== Speichern ==========
+    window.saveClass = async () => {
+        if (!activeClassId) {
+            alert("Fehler: Keine Klasse ausgewählt");
+            return;
+        }
+        
+        try {
+            await setDoc(doc(db, "klassen", activeClassId), {
+                id: activeClassId,
+                name: activeClassName,
+                students,
+                groupSettings,
+                groups
+            });
+            alert("✓ Klasse gespeichert!");
+        } catch (e) {
+            console.error("Fehler beim Speichern:", e);
+            alert("Fehler beim Speichern");
+        }
+    };
+
+    window.updateGroupSettings = () => {
+        groupSettings.mode = document.getElementById('splitMode').value;
+        groupSettings.value = parseInt(document.getElementById('splitValue').value);
+    };
+
+    // ========== Gruppen Einteilung ==========
+    window.generateGroups = async () => {
+        if (!activeClassId) {
+            alert("Bitte erstelle zuerst eine Klasse!");
+            return;
+        }
+
+        if (students.length === 0) {
+            alert("Bitte füge zuerst Schüler hinzu!");
+            return;
+        }
+
+        const active = students.filter(s => s.active);
+        if (active.length === 0) {
+            alert("Es sind keine Schüler ausgewählt!");
+            return;
+        }
+
+        // Array shufflen
+        const shuffled = [...active].sort(() => Math.random() - 0.5);
+        groups = [];
+
+        if (groupSettings.mode === 'groups') {
+            // Nach Anzahl Gruppen
+            const groupCount = Math.min(groupSettings.value, active.length);
+            for (let i = 0; i < groupCount; i++) {
+                groups.push({
+                    name: `Gruppe ${i + 1}`,
+                    members: []
+                });
+            }
+            shuffled.forEach((student, index) => {
+                groups[index % groupCount].members.push(student.name);
+            });
+        } else {
+            // Nach Personen pro Gruppe
+            const size = groupSettings.value;
+            for (let i = 0; i < shuffled.length; i += size) {
+                const groupMembers = shuffled.slice(i, i + size).map(s => s.name);
+                groups.push({
+                    name: `Gruppe ${Math.floor(i / size) + 1}`,
+                    members: groupMembers
+                });
+            }
+        }
+
+        renderGroups();
+        await saveClass();
+    };
+
+    function renderGroups() {
+        const output = document.getElementById('groupsOutput');
+        if (groups.length === 0) {
+            output.innerHTML = '<div class="no-data">Noch keine Gruppen erstellt.</div>';
+            return;
+        }
+
+        output.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'groups-grid';
+
+        groups.forEach((group, index) => {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            const colors = [
+                'var(--pastel-1)',
+                'var(--pastel-2)',
+                'var(--pastel-3)',
+                'var(--pastel-4)',
+                'var(--pastel-5)'
+            ];
+            card.style.background = colors[index % colors.length];
+            card.innerHTML = `
+                <h4>${group.name}</h4>
+                <div class="group-members">
+                    ${group.members.map(m => `<div>• ${m}</div>`).join('')}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        output.appendChild(grid);
     }
 
-    // Timer Logik
-    let timeLeft = 300;
-    function startTimer() {
-        const total = document.getElementById('timerMin').value * 60;
-        timeLeft = total;
-        const interval = setInterval(() => {
-            timeLeft--;
-            const progress = document.getElementById('progress');
-            const offset = 251.2 - (timeLeft / total) * 251.2;
-            progress.style.strokeDashoffset = offset;
-            
-            if(timeLeft <= 0) clearInterval(interval);
-        }, 1000);
-    }
-    
-    function saveClass() { alert("Klasse gespeichert!"); }
-    function generateGroups() { alert("Gruppen generiert!"); }
+    // ========== Initialisierung ==========
+    loadClasses();
 </script>
 </body>
 </html>
